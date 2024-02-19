@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import TaskCard from '../components/TaskCard';
 import { MMKVLoader } from 'react-native-mmkv-storage';
@@ -18,6 +18,8 @@ const getCurrentDateAndTime = () => {
 // Home screen component
 const HomeScreen = ({ navigation }) => {
     const [tasks, setTasks] = useState([]);
+    const [time, setTime] = useState(getCurrentDateAndTime().currentTime);
+    const intervalRef = useRef(null);
     const { addListener, removeListener } = useNavigation();
 
     // Fetch tasks on focus
@@ -31,6 +33,11 @@ const HomeScreen = ({ navigation }) => {
         return () => {
             unsubscribeFocus();
         };
+    }, []);
+
+    useEffect(() => {
+        // Clear the interval when the component is unmounted
+        return () => clearInterval(intervalRef.current);
     }, []);
 
     const fetchTask = async () => {
@@ -57,12 +64,22 @@ const HomeScreen = ({ navigation }) => {
         await storage.setArrayAsync('tasks', data);
     }
 
+    useEffect(() => {
+        // Update the time every second
+        intervalRef.current = setInterval(() => {
+            setTime(getCurrentDateAndTime().currentTime);
+        }, 1000);
+
+        // Clean up interval when the component is unmounted
+        return () => clearInterval(intervalRef.current);
+    }, []);
+
     return (
         <View style={styles.container}>
             {/* Display current date and time */}
             <View style={styles.datetimeContainer}>
                 <Text style={styles.datetimeText}>Date: {getCurrentDateAndTime().currentDate}</Text>
-                <Text style={styles.datetimeText}>Time: {getCurrentDateAndTime().currentTime}</Text>
+                <Text style={styles.datetimeText}>Time: {time}</Text>
             </View>
 
             {/* Display task cards */}
